@@ -375,7 +375,7 @@
               <div><span class="dot"></span> Premium visual hierarchy</div>
               <div><span class="dot"></span> Copy prompts for every section</div>
             </div>
-            <a class="btn small light" href="#templates">View the templates →</a>
+            <button class="btn small light" type="button" data-open-interest="template-modal">View the templates →</button>
             <div class="template-code" aria-label="Template discount code">Use code <strong>DIXIE</strong> for 10% off</div>
           </article>
           <article class="path-card">
@@ -532,7 +532,7 @@
         <div class="faq-answer" id="faq-answer"><strong>Choose a topic or send a question.</strong> The Concierge™ will help point you toward the right DBHaus™ path.</div>
         <p class="form-status concierge-status" id="faq-status" role="status" aria-live="polite"></p>
         <div class="faq-actions">
-          <a class="btn light" href="#templates">Shop templates →</a>
+          <button class="btn light" type="button" data-open-interest="template-modal">Shop templates →</button>
           <button class="btn" type="button" data-open-modal>Ask about sprint →</button>
         </div>
       </div>
@@ -911,26 +911,30 @@
     const mobileMenu = document.querySelector('#mobile-menu');
 
     function trackDbhausFormSuccess(form, eventName){
-      const formData = new FormData(form);
-      const source = formData.get('source') || formData.get('path') || form.getAttribute('id') || 'DBHaus form';
-      const trackingPayload = {
-        event: eventName,
-        form_source: source,
-        form_id: form.getAttribute('id') || '',
-        page_path: window.location.pathname
-      };
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push(trackingPayload);
-      if (typeof gtag === 'function') {
-        gtag('event', eventName, {
+      try {
+        const formData = new FormData(form);
+        const source = formData.get('source') || formData.get('path') || form.getAttribute('id') || 'DBHaus form';
+        const trackingPayload = {
+          event: eventName,
           form_source: source,
-          form_id: trackingPayload.form_id,
-          page_path: trackingPayload.page_path
-        });
-      }
-      if (typeof fbq === 'function') {
-        fbq('track', 'Lead', { content_name: source });
-        fbq('trackCustom', eventName, { form_source: source });
+          form_id: form.getAttribute('id') || '',
+          page_path: window.location.pathname
+        };
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(trackingPayload);
+        if (typeof gtag === 'function') {
+          gtag('event', eventName, {
+            form_source: source,
+            form_id: trackingPayload.form_id,
+            page_path: trackingPayload.page_path
+          });
+        }
+        if (typeof fbq === 'function') {
+          fbq('track', 'Lead', { content_name: source });
+          fbq('trackCustom', eventName, { form_source: source });
+        }
+      } catch (error) {
+        console.warn('DBHaus tracking skipped:', error);
       }
     }
     if(mobileMenuButton && mobileMenu){
@@ -1022,21 +1026,24 @@
       if(q.includes('for me') || q.includes('fit') || q.includes('who')) return 'fit';
       return 'next';
     }
-    conciergeButton.addEventListener('click', () => {
-      conciergeButton.classList.remove('bounce');
-      void conciergeButton.offsetWidth;
-      conciergeButton.classList.add('bounce');
-      conciergePanel.classList.toggle('is-open');
-      conciergeButton.setAttribute('aria-expanded', conciergePanel.classList.contains('is-open'));
-    });
-    document.querySelector('[data-open-faq]').addEventListener('click', () => {
-      faqChat.classList.toggle('is-open');
-    });
+    if(conciergeButton && conciergePanel){
+      conciergeButton.addEventListener('click', () => {
+        conciergeButton.classList.remove('bounce');
+        void conciergeButton.offsetWidth;
+        conciergeButton.classList.add('bounce');
+        conciergePanel.classList.toggle('is-open');
+        conciergeButton.setAttribute('aria-expanded', conciergePanel.classList.contains('is-open'));
+      });
+    }
+    document.querySelectorAll('[data-open-faq]').forEach(button => button.addEventListener('click', () => {
+      if(faqChat) faqChat.classList.toggle('is-open');
+    }));
     document.querySelectorAll('[data-faq]').forEach(button => {
       button.addEventListener('click', () => {
         faqAnswer.innerHTML = faqCopy[button.dataset.faq];
       });
     });
+    if(faqForm){
     faqForm.addEventListener('submit', async event => {
       event.preventDefault();
       const submitButton = faqForm.querySelector('button[type="submit"]');
@@ -1067,9 +1074,11 @@
         submitButton.textContent = originalText;
       }
     });
+    }
 
     const sprintForm = document.querySelector('#sprint-form');
     const formStatus = document.querySelector('#form-status');
+    if(sprintForm){
     sprintForm.addEventListener('submit', async event => {
       event.preventDefault();
       const submitButton = sprintForm.querySelector('button[type="submit"]');
@@ -1098,6 +1107,7 @@
         submitButton.textContent = originalText;
       }
     });
+    }
 
 
     document.querySelectorAll('.interest-form').forEach(form => {
@@ -1139,9 +1149,9 @@
         legalModal.classList.remove('is-open');
         dmcaModal.classList.remove('is-open');
         interestModals.forEach(interestModal => interestModal.classList.remove('is-open'));
-        conciergePanel.classList.remove('is-open');
-        faqChat.classList.remove('is-open');
-        conciergeButton.setAttribute('aria-expanded', 'false');
+        if(conciergePanel) conciergePanel.classList.remove('is-open');
+        if(faqChat) faqChat.classList.remove('is-open');
+        if(conciergeButton) conciergeButton.setAttribute('aria-expanded', 'false');
       }
     });
   </script>
